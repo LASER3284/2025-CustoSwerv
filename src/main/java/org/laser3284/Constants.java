@@ -6,6 +6,7 @@ package org.laser3284;
 
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.Units;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 
@@ -37,6 +38,42 @@ public final class Constants {
             this.v = v;
             this.a = 0;
         }
+    }
+
+    /**
+     * @brief using modulusNormalize below, we convert any real angle into
+     * another real angle constrainted on the interval [-180,180) degrees, using
+     * a wrapping modulus, to describe the minimum value for a rotation about a
+     * circle's circumference.
+     */
+    public static Angle normalizeAngle(Angle theta) {
+        // deg, being smaller than rad, offer better computer precision; `Angle`
+        // does not care about this, and can auto-convert for us
+        final double min = -180;
+        final double max = 180;
+
+        double deg = theta.in(Units.Degrees);
+
+        return Units.Degrees.of(modulusNormalize(deg, min, max));
+    }
+
+    /**
+     * @brief normalizes any real number to be within the interval [min, max).
+     * This interval will wrap values using a modulus.
+     * @param value Any real number
+     * @param min The minimum acceptable value within the interval.
+     * @param max The maximum acceptable value within the interval.
+     * @implNote Implemtation based on <a
+     * href="https://stackoverflow.com/a/2021986">this SO answer</a>
+     */
+    public static double modulusNormalize(double value, double min, double max) {
+        final double intervalWidth = max - min;
+        final double valueOffset = value - min;
+
+        return (
+            valueOffset
+            - (Math.floor(valueOffset / intervalWidth) * intervalWidth)
+        ) + min;
     }
 
     public static class OperatorConstants {
@@ -155,5 +192,8 @@ public final class Constants {
             public static final PidConstants AZIMUTH_PID = new PidConstants(0, 0, 0);
             public static final FeedForwardConstants DRIVE_FF = new FeedForwardConstants(0, 0);
         }
+
+        // TODO: CHANGE ME
+        public static final int GYRO_ID = -1;
     }
 }

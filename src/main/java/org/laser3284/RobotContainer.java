@@ -39,7 +39,10 @@ public class RobotContainer {
                 () -> { return driverController.getLeftX(); },
                 () -> { return driverController.getLeftY(); },
                 () -> { return driverController.getRightX(); },
-                () -> { return driverController.getRightY(); }
+                () -> { return driverController.getRightY(); },
+                // this is our slowness factor; the more it is pressed, the
+                // slower the robot should go.
+                () -> { return driverController.getLeftTriggerAxis(); }
             );
         // if the driver want's a button for changing perspective, that's also
         // possible

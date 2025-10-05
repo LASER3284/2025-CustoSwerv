@@ -4,9 +4,11 @@ package org.laser3284.subsystems.swerve;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.Timer;
@@ -354,6 +356,18 @@ public class Module extends SubsystemBase {
      */
     public SwerveModuleState getState() {
         return new SwerveModuleState(this.getSpeed(), new Rotation2d(this.getAngle()));
+    }
+
+    public Distance getDrivePosition() {
+        var currentRotations = this.driveMotor.getEncoder().getPosition()
+            / Constants.DriveTrainConstants.General.DRIVE_GEARING;
+
+        return Constants.DriveTrainConstants.General.WHEEL_CIRCUMFERENCE
+            .times(currentRotations);
+    }
+
+    public SwerveModulePosition getPosition() {
+        return new SwerveModulePosition(this.getDrivePosition(), new Rotation2d(this.getAngle()));
     }
 
     /**
