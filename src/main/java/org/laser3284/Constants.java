@@ -13,6 +13,32 @@ import edu.wpi.first.units.measure.LinearVelocity;
  * @brief Global constants which are used throughout the code.
  */
 public final class Constants {
+    public static class PidConstants {
+        public final double p, i, d;
+
+        PidConstants(double p, double i, double d) {
+            this.p = p;
+            this.i = i;
+            this.d = d;
+        }
+    }
+
+    public static class FeedForwardConstants {
+        public final double s, v, a;
+
+        FeedForwardConstants(double s, double v, double a) {
+            this.s = s;
+            this.v = v;
+            this.a = a;
+        }
+
+        FeedForwardConstants(double s, double v) {
+            this.s = s;
+            this.v = v;
+            this.a = 0;
+        }
+    }
+
     public static class OperatorConstants {
         public static final int DRIVE_PORT = 0;
     }
@@ -39,17 +65,9 @@ public final class Constants {
                     1
                 );
 
-            public static final double DRIVE_K_P = 0.0;
-            public static final double DRIVE_K_I = 0.0;
-            public static final double DRIVE_K_D = 0.0;
-
-            public static final double AZIMUTH_K_P = 0.0;
-            public static final double AZIMUTH_K_I = 0.0;
-            public static final double AZIMUTH_K_D = 0.0;
-
-            public static final double DRIVE_K_S = 0.0;
-            public static final double DRIVE_K_V = 0.0;
-            public static final double DRIVE_K_A = 0.0;
+            public static final PidConstants DRIVE_PID = new PidConstants(0, 0, 0);
+            public static final PidConstants AZIMUTH_PID = new PidConstants(0, 0, 0);
+            public static final FeedForwardConstants DRIVE_FF = new FeedForwardConstants(0, 0);
 
             // TODO: CHANGE THIS
             public static final int DRIVE_ID = -1;
@@ -62,17 +80,10 @@ public final class Constants {
                     1,
                     -1
                 );
-            public static final double DRIVE_K_P = 0.0;
-            public static final double DRIVE_K_I = 0.0;
-            public static final double DRIVE_K_D = 0.0;
 
-            public static final double AZIMUTH_K_P = 0.0;
-            public static final double AZIMUTH_K_I = 0.0;
-            public static final double AZIMUTH_K_D = 0.0;
-
-            public static final double DRIVE_K_S = 0.0;
-            public static final double DRIVE_K_V = 0.0;
-            public static final double DRIVE_K_A = 0.0;
+            public static final PidConstants DRIVE_PID = new PidConstants(0, 0, 0);
+            public static final PidConstants AZIMUTH_PID = new PidConstants(0, 0, 0);
+            public static final FeedForwardConstants DRIVE_FF = new FeedForwardConstants(0, 0);
 
             // TODO: CHANGE THIS
             public static final int DRIVE_ID = -1;
@@ -86,17 +97,9 @@ public final class Constants {
                     1
                 );
 
-            public static final double DRIVE_K_P = 0.0;
-            public static final double DRIVE_K_I = 0.0;
-            public static final double DRIVE_K_D = 0.0;
-
-            public static final double AZIMUTH_K_P = 0.0;
-            public static final double AZIMUTH_K_I = 0.0;
-            public static final double AZIMUTH_K_D = 0.0;
-
-            public static final double DRIVE_K_S = 0.0;
-            public static final double DRIVE_K_V = 0.0;
-            public static final double DRIVE_K_A = 0.0;
+            public static final PidConstants DRIVE_PID = new PidConstants(0, 0, 0);
+            public static final PidConstants AZIMUTH_PID = new PidConstants(0, 0, 0);
+            public static final FeedForwardConstants DRIVE_FF = new FeedForwardConstants(0, 0);
 
             // TODO: CHANGE THIS
             public static final int DRIVE_ID = -1;
@@ -110,17 +113,9 @@ public final class Constants {
                     -1
                 );
 
-            public static final double DRIVE_K_P = 0.0;
-            public static final double DRIVE_K_I = 0.0;
-            public static final double DRIVE_K_D = 0.0;
-
-            public static final double AZIMUTH_K_P = 0.0;
-            public static final double AZIMUTH_K_I = 0.0;
-            public static final double AZIMUTH_K_D = 0.0;
-
-            public static final double DRIVE_K_S = 0.0;
-            public static final double DRIVE_K_V = 0.0;
-            public static final double DRIVE_K_A = 0.0;
+            public static final PidConstants DRIVE_PID = new PidConstants(0, 0, 0);
+            public static final PidConstants AZIMUTH_PID = new PidConstants(0, 0, 0);
+            public static final FeedForwardConstants DRIVE_FF = new FeedForwardConstants(0, 0);
 
             // TODO: CHANGE THIS
             public static final int DRIVE_ID = -1;
@@ -156,17 +151,9 @@ public final class Constants {
              */
             public static final LinearVelocity MAX_WHEEL_VELOCITY = Units.FeetPerSecond.of(14.5);
 
-            public static final double DRIVE_K_P = 0.0;
-            public static final double DRIVE_K_I = 0.0;
-            public static final double DRIVE_K_D = 0.0;
-
-            public static final double AZIMUTH_K_P = 0.0;
-            public static final double AZIMUTH_K_I = 0.0;
-            public static final double AZIMUTH_K_D = 0.0;
-
-            public static final double DRIVE_K_S = 0.0;
-            public static final double DRIVE_K_V = 0.0;
-            public static final double DRIVE_K_A = 0.0;
+            public static final PidConstants DRIVE_PID = new PidConstants(0, 0, 0);
+            public static final PidConstants AZIMUTH_PID = new PidConstants(0, 0, 0);
+            public static final FeedForwardConstants DRIVE_FF = new FeedForwardConstants(0, 0);
         }
     }
 }

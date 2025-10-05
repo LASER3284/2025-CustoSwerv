@@ -80,21 +80,21 @@ public class Module extends SubsystemBase {
             }
 
             this.drivePid = new PIDController(
-                    Constants.DriveTrainConstants.General.DRIVE_K_P,
-                    Constants.DriveTrainConstants.General.DRIVE_K_I,
-                    Constants.DriveTrainConstants.General.DRIVE_K_D
+                    Constants.DriveTrainConstants.General.DRIVE_PID.p,
+                    Constants.DriveTrainConstants.General.DRIVE_PID.i,
+                    Constants.DriveTrainConstants.General.DRIVE_PID.d
                     );
 
             this.driveFf = new SimpleMotorFeedforward(
-                    Constants.DriveTrainConstants.General.DRIVE_K_S,
-                    Constants.DriveTrainConstants.General.DRIVE_K_V,
-                    Constants.DriveTrainConstants.General.DRIVE_K_A
+                    Constants.DriveTrainConstants.General.DRIVE_FF.s,
+                    Constants.DriveTrainConstants.General.DRIVE_FF.v,
+                    Constants.DriveTrainConstants.General.DRIVE_FF.a
                     );
 
             this.azimuthPid = new PIDController(
-                    Constants.DriveTrainConstants.General.AZIMUTH_K_P,
-                    Constants.DriveTrainConstants.General.AZIMUTH_K_I,
-                    Constants.DriveTrainConstants.General.AZIMUTH_K_D
+                    Constants.DriveTrainConstants.General.AZIMUTH_PID.p,
+                    Constants.DriveTrainConstants.General.AZIMUTH_PID.i,
+                    Constants.DriveTrainConstants.General.AZIMUTH_PID.d
                     );
 
             // create a default goal state
@@ -144,10 +144,14 @@ public class Module extends SubsystemBase {
      * @param drivePid The drive motor PID controller for this module.
      * @param driveFf The feedforward controller for the drive motor for this
      * module.
-     * @param azimuthPid The azimuth motor PID controller for this module.
+     * @param azimuthPid The azimuth motor PID controller constants for this module.
+     * @see {@link Constants.PidConstants}
+     * @see {@link Constants.FeedForwardConstants}
      */
     public Module(int driveId, int azimuthId, int encoderId, String name,
-            PIDController drivePid, SimpleMotorFeedforward driveFf, PIDController azimuthPid) {
+            Constants.PidConstants drivePid,
+            Constants.FeedForwardConstants driveFf,
+            Constants.PidConstants azimuthPid) {
         // this block will setup the necessary objects of our instance.
         {
             this.driveMotor = new SparkFlex(driveId, MotorType.kBrushless);
@@ -159,9 +163,15 @@ public class Module extends SubsystemBase {
                 this.azimuthEncodor.optimizeBusUtilization();
             }
 
-            this.drivePid = drivePid;
-            this.driveFf = driveFf;
-            this.azimuthPid = azimuthPid;
+            this.drivePid = new PIDController(drivePid.p, drivePid.i, drivePid.d);
+
+            this.driveFf = new SimpleMotorFeedforward(
+                    driveFf.s, driveFf.v, driveFf.a
+                    );
+
+            this.azimuthPid = new PIDController(
+                    azimuthPid.p, azimuthPid.i, azimuthPid.d
+                    );
 
             // create a default goal state
             this.goal = new SwerveModuleState(Units.FeetPerSecond.of(0), new Rotation2d(Units.Radians.of(0)));

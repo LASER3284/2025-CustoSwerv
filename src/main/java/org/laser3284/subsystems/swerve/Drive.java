@@ -2,14 +2,13 @@
 
 package org.laser3284.subsystems.swerve;
 
-import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 import java.util.function.DoubleSupplier;
 
+import org.laser3284.Constants;
 import org.laser3284.Constants.DriveTrainConstants;
 
 /**
@@ -30,21 +29,9 @@ public class Drive extends SubsystemBase {
             DriveTrainConstants.FrontRight.DRIVE_ID,
             DriveTrainConstants.FrontRight.ENCODER_ID,
             NAME + "/frontright",
-            new PIDController(
-                DriveTrainConstants.FrontRight.DRIVE_K_P,
-                DriveTrainConstants.FrontRight.DRIVE_K_I,
-                DriveTrainConstants.FrontRight.DRIVE_K_D
-            ),
-            new SimpleMotorFeedforward(
-                DriveTrainConstants.FrontRight.DRIVE_K_S,
-                DriveTrainConstants.FrontRight.DRIVE_K_V,
-                DriveTrainConstants.FrontRight.DRIVE_K_A
-            ),
-            new PIDController(
-                DriveTrainConstants.FrontRight.AZIMUTH_K_P,
-                DriveTrainConstants.FrontRight.AZIMUTH_K_I,
-                DriveTrainConstants.FrontRight.AZIMUTH_K_D
-            )
+            Constants.DriveTrainConstants.FrontRight.DRIVE_PID,
+            Constants.DriveTrainConstants.FrontRight.DRIVE_FF,
+            Constants.DriveTrainConstants.FrontRight.AZIMUTH_PID
         );
 
     protected final Module frontLeft = new Module(
@@ -52,21 +39,9 @@ public class Drive extends SubsystemBase {
             DriveTrainConstants.FrontLeft.DRIVE_ID,
             DriveTrainConstants.FrontLeft.ENCODER_ID,
             NAME + "/frontleft",
-            new PIDController(
-                DriveTrainConstants.FrontLeft.DRIVE_K_P,
-                DriveTrainConstants.FrontLeft.DRIVE_K_I,
-                DriveTrainConstants.FrontLeft.DRIVE_K_D
-            ),
-            new SimpleMotorFeedforward(
-                DriveTrainConstants.FrontLeft.DRIVE_K_S,
-                DriveTrainConstants.FrontLeft.DRIVE_K_V,
-                DriveTrainConstants.FrontLeft.DRIVE_K_A
-            ),
-            new PIDController(
-                DriveTrainConstants.FrontLeft.AZIMUTH_K_P,
-                DriveTrainConstants.FrontLeft.AZIMUTH_K_I,
-                DriveTrainConstants.FrontLeft.AZIMUTH_K_D
-            )
+            Constants.DriveTrainConstants.FrontLeft.DRIVE_PID,
+            Constants.DriveTrainConstants.FrontLeft.DRIVE_FF,
+            Constants.DriveTrainConstants.FrontLeft.AZIMUTH_PID
         );
 
     protected final Module backRight = new Module(
@@ -74,21 +49,9 @@ public class Drive extends SubsystemBase {
             DriveTrainConstants.BackRight.DRIVE_ID,
             DriveTrainConstants.BackRight.ENCODER_ID,
             NAME + "/backright",
-            new PIDController(
-                DriveTrainConstants.BackRight.DRIVE_K_P,
-                DriveTrainConstants.BackRight.DRIVE_K_I,
-                DriveTrainConstants.BackRight.DRIVE_K_D
-            ),
-            new SimpleMotorFeedforward(
-                DriveTrainConstants.BackRight.DRIVE_K_S,
-                DriveTrainConstants.BackRight.DRIVE_K_V,
-                DriveTrainConstants.BackRight.DRIVE_K_A
-            ),
-            new PIDController(
-                DriveTrainConstants.BackRight.AZIMUTH_K_P,
-                DriveTrainConstants.BackRight.AZIMUTH_K_I,
-                DriveTrainConstants.BackRight.AZIMUTH_K_D
-            )
+            Constants.DriveTrainConstants.BackRight.DRIVE_PID,
+            Constants.DriveTrainConstants.BackRight.DRIVE_FF,
+            Constants.DriveTrainConstants.BackRight.AZIMUTH_PID
         );
 
     protected final Module backLeft = new Module(
@@ -96,21 +59,9 @@ public class Drive extends SubsystemBase {
             DriveTrainConstants.BackLeft.DRIVE_ID,
             DriveTrainConstants.BackLeft.ENCODER_ID,
             NAME + "/backleft",
-            new PIDController(
-                DriveTrainConstants.BackLeft.DRIVE_K_P,
-                DriveTrainConstants.BackLeft.DRIVE_K_I,
-                DriveTrainConstants.BackLeft.DRIVE_K_D
-            ),
-            new SimpleMotorFeedforward(
-                DriveTrainConstants.BackLeft.DRIVE_K_S,
-                DriveTrainConstants.BackLeft.DRIVE_K_V,
-                DriveTrainConstants.BackLeft.DRIVE_K_A
-            ),
-            new PIDController(
-                DriveTrainConstants.BackLeft.AZIMUTH_K_P,
-                DriveTrainConstants.BackLeft.AZIMUTH_K_I,
-                DriveTrainConstants.BackLeft.AZIMUTH_K_D
-            )
+            Constants.DriveTrainConstants.BackLeft.DRIVE_PID,
+            Constants.DriveTrainConstants.BackLeft.DRIVE_FF,
+            Constants.DriveTrainConstants.BackLeft.AZIMUTH_PID
         );
 
     protected DoubleSupplier leftXJoystick;
