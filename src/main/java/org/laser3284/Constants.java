@@ -7,6 +7,7 @@ package org.laser3284;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 
@@ -195,5 +196,15 @@ public final class Constants {
 
         // TODO: CHANGE ME
         public static final int GYRO_ID = -1;
+
+        /**
+         * @brief this is the maximum rate of rotation for the robot chassis.
+         * Can be measured using a custom auto routine of locking swerve
+         * azimuths to a known locaton and maxing the power output of the drive
+         * motor. For now, assume 720 deg/s (2 rotations per second)
+         *
+         * TODO: CHANGE ME
+         */
+        public static final AngularVelocity MAX_CHASSIS_OMEGA = Units.DegreesPerSecond.of(720);
     }
 }

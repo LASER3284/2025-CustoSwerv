@@ -4,12 +4,19 @@ package org.laser3284.subsystems.swerve;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.numbers.*;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.units.*;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.LinearVelocity;
 
 import java.util.function.DoubleSupplier;
 
@@ -28,8 +35,6 @@ import com.ctre.phoenix6.hardware.Pigeon2;
  * control. That can be done via rewrite or via subclassing.
  * @implNote we're using a continuous interval for rotation of [-180,180]; this
  * is done by 
- * 
- * TODO: finish
  */
 public class Drive extends SubsystemBase {
     public final String NAME = "drivetrain";
@@ -94,14 +99,9 @@ public class Drive extends SubsystemBase {
 
     protected SwerveModulePosition[] currentPositions;
 
+    protected ChassisSpeeds chassisSpeeds;
+
     public Drive() {
-        this.defaultCommand = this.runEnd(() -> this.enabled(), () -> {});
-
-        CommandScheduler.getInstance().registerSubsystem(this);
-        CommandScheduler.getInstance().setDefaultCommand(
-                this, this.defaultCommand
-                );
-
         this.currentPositions = new SwerveModulePosition[] {
             this.frontLeft.getPosition(),
                 this.frontRight.getPosition(),
@@ -115,6 +115,13 @@ public class Drive extends SubsystemBase {
                 this.gyro.getRotation2d(),
                 this.currentPositions,
                 Pose2d.kZero
+                );
+
+        this.defaultCommand = this.runEnd(() -> this.enabled(), () -> {});
+
+        CommandScheduler.getInstance().registerSubsystem(this);
+        CommandScheduler.getInstance().setDefaultCommand(
+                this, this.defaultCommand
                 );
     }
 
@@ -230,6 +237,82 @@ public class Drive extends SubsystemBase {
     }
 
     public void enabled() {
-        // TODO
+        // this is the joystick value, so we need to modify it
+        double slowFactorNow = this.slowFactor.getAsDouble();
+        if (slowFactorNow > 0.6) {
+            slowFactorNow = 1.0 - slowFactorNow;
+            // if we're trying to be slower than 10%, then we should clamp it to
+            // only 10%.
+            slowFactorNow = slowFactorNow < 0.1 ? 0.1 : slowFactorNow;
+        } else {
+            slowFactorNow = 1.0;
+        }
+
+        // should be either 1 or -1
+        double sign = 1.0;
+
+        // these are negative due to how HID joysticks work
+        double throttleX = -this.leftXJoystick.getAsDouble();
+        throttleX = Math.abs(throttleX) > 0.1 ? throttleX : 0.0;
+
+        double throttleY = -this.leftYJoystick.getAsDouble();
+        throttleY = Math.abs(throttleY) > 0.1 ? throttleY : 0.0;
+
+        // W for lowercase omega, which is common for angular velocity, which is
+        // what this is.
+        double throttleW = -this.rightXJoystick.getAsDouble();
+        throttleW = Math.abs(throttleW) > 0.1 ? throttleW : 0.0;
+
+        // our throttle values should be modified if we're on the opposite side
+        // of the field from what we expect.
+        if (this.currentView == Perspective.Operater) {
+            if (DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red) {
+                sign = -1.0;
+            }
+        }
+        throttleX *= sign * slowFactorNow;
+        throttleY *= sign * slowFactorNow;
+        throttleW *= slowFactorNow;
+
+        LinearVelocity vx =
+            Constants.DriveTrainConstants.General.MAX_WHEEL_VELOCITY
+            .times(throttleX);
+
+        LinearVelocity vy =
+            Constants.DriveTrainConstants.General.MAX_WHEEL_VELOCITY
+            .times(throttleY);
+
+        AngularVelocity omega =
+            Constants.DriveTrainConstants.MAX_CHASSIS_OMEGA
+            .times(throttleW);
+
+        if (this.currentView == Perspective.Operater) {
+
+            this.chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(
+                    vx, vy, omega, this.getCurrentPose().getRotation()
+                    );
+        } else {
+            this.chassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(
+                    vx, vy, omega, this.getCurrentPose().getRotation()
+                    );
+        }
+
+        var states = this.swerveKinematics.toSwerveModuleStates(
+                this.chassisSpeeds
+                );
+
+        SwerveDriveKinematics.desaturateWheelSpeeds(
+                states,
+                Constants.DriveTrainConstants.General.MAX_WHEEL_VELOCITY
+                );
+
+        frontLeft.setGoal(states[0]);
+        frontRight.setGoal(states[1]);
+        backLeft.setGoal(states[2]);
+        backRight.setGoal(states[3]);
+    }
+
+    public Command getDefaultCommand() {
+        return this.defaultCommand;
     }
 }

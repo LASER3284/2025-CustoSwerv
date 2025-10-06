@@ -1,0 +1,12 @@
+# this should keep all of our files correct, at least vaguely
+
+root = true
+
+[*]
+trim_trailing_whitespace = true
+end_of_line = lf
+insert_final_newline = true
+
+[*.java]
+indent_size = 4
+indent_style = space

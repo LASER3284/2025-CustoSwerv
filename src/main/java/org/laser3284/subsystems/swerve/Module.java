@@ -180,6 +180,7 @@ public class Module extends SubsystemBase {
 
             this.name = name;
 
+            // NOTE: we use degrees on this PID controller!
             this.azimuthPid.enableContinuousInput(-180, 180);
         }
 

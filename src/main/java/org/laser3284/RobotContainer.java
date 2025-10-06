@@ -6,16 +6,16 @@ package org.laser3284;
 
 import org.laser3284.Constants.OperatorConstants;
 import org.laser3284.subsystems.swerve.Drive;
-import org.laser3284.subsystems.swerve.Drive.Perspective;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 
 /**
- * This class is where the bulk of the robot should be declared. Since Command-based is a
- * "declarative" paradigm, very little robot logic should actually be handled in the {@link Robot}
- * periodic methods (other than the scheduler calls). Instead, the structure of the robot (including
- * subsystems, commands, and trigger mappings) should be declared here.
+ * This class is where the bulk of the robot should be declared. Since
+ * Command-based is a "declarative" paradigm, very little robot logic should
+ * actually be handled in the {@link Robot} periodic methods (other than the
+ * scheduler calls). Instead, the structure of the robot (including subsystems,
+ * commands, and trigger mappings) should be declared here.
  */
 public class RobotContainer {
     private final Drive driveTrain = new Drive();
@@ -23,7 +23,10 @@ public class RobotContainer {
     private final CommandXboxController driverController =
         new CommandXboxController(OperatorConstants.DRIVE_PORT);
 
-    /** The container for the robot. Contains subsystems, OI devices, and commands. */
+    /**
+     * The container for the robot. Contains subsystems, OI devices, and
+     * commands.
+     */
     public RobotContainer() {
         // Configure the trigger bindings
         configureBindings();
@@ -31,8 +34,8 @@ public class RobotContainer {
 
     /**
      * Create and register our bindings and commands for certain operations. Our
-     * drive train, for example, needs four DoubleSuppliers for it's joystick
-     * axes.
+     * drive train, for example, needs five DoubleSuppliers for it's joystick
+     * axes plus a trigger axis for slowing it down.
      */
     private void configureBindings() {
         driveTrain.setJoystickSuppliers(
@@ -40,8 +43,9 @@ public class RobotContainer {
                 () -> { return driverController.getLeftY(); },
                 () -> { return driverController.getRightX(); },
                 () -> { return driverController.getRightY(); },
-                // this is our slowness factor; the more it is pressed, the
-                // slower the robot should go.
+
+                // this is our slowness factor; values closer to 1.0 move the
+                // robot faster.
                 () -> { return driverController.getLeftTriggerAxis(); }
             );
         // if the driver want's a button for changing perspective, that's also
