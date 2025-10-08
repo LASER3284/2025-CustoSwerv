@@ -12,7 +12,9 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 
@@ -312,5 +314,49 @@ public class Drive extends SubsystemBase {
 
     public Command getDefaultCommand() {
         return this.defaultCommand;
+    }
+
+    public Command swerveDriveSysIdQuasistatic(SysIdRoutine.Direction dir) {
+        var sysid = Commands.parallel(
+            this.frontLeft.driveSysIdQuasistatic(dir),
+            this.frontRight.driveSysIdQuasistatic(dir),
+            this.backLeft.driveSysIdQuasistatic(dir),
+            this.backRight.driveSysIdQuasistatic(dir)
+            );
+        sysid.addRequirements(this);
+        return sysid;
+    }
+
+    public Command swerveDriveSysIdDynamic(SysIdRoutine.Direction dir) {
+        var sysid = Commands.parallel(
+            this.frontLeft.driveSysIdDynamic(dir),
+            this.frontRight.driveSysIdDynamic(dir),
+            this.backLeft.driveSysIdDynamic(dir),
+            this.backRight.driveSysIdDynamic(dir)
+            );
+        sysid.addRequirements(this);
+        return sysid;
+    }
+
+    public Command swerveAzimuthSysIdQuasistatic(SysIdRoutine.Direction dir) {
+        var sysid = Commands.parallel(
+            this.frontLeft.azimuthSysIdQuasistatic(dir),
+            this.frontRight.azimuthSysIdQuasistatic(dir),
+            this.backLeft.azimuthSysIdQuasistatic(dir),
+            this.backRight.azimuthSysIdQuasistatic(dir)
+            );
+        sysid.addRequirements(this);
+        return sysid;
+    }
+
+    public Command swerveAzimuthSysIdDynamic(SysIdRoutine.Direction dir) {
+        var sysid = Commands.parallel(
+            this.frontLeft.azimuthSysIdDynamic(dir),
+            this.frontRight.azimuthSysIdDynamic(dir),
+            this.backLeft.azimuthSysIdDynamic(dir),
+            this.backRight.azimuthSysIdDynamic(dir)
+            );
+        sysid.addRequirements(this);
+        return sysid;
     }
 }

@@ -8,13 +8,17 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
@@ -37,12 +41,13 @@ import com.ctre.phoenix6.hardware.CANcoder;
  * instances of it, and feed them to the command scheduler, or to the {@link
  * Drive} constructor and consumed.
  *
- * This class was adapted from <a href="https://github.com/LASER3284/2024-Robot-Code/blob/kraken-swap/src/main/include/subsystems/swerve.h">3284 FORTE code</a>.
- *
- * To make things consistent, an azimuth angle of 0 radians should be
+ * To make things consistent, an azimuth angle of 0 degrees should be
  * perpendicular to the plane of the robot's front face. Our heading should be
- * from -pi to pi radians. Our drive velocity is positive if it is heading in
+ * from -180 to 180 degrees. Our drive velocity is positive if it is heading in
  * the direction of the azimuth, negative otherwise.
+ *
+ * For SysID, see
+ * https://frcdocs.wpi.edu/en/latest/docs/software/advanced-controls/system-identification/
  */
 public class Module extends SubsystemBase {
     private final SparkMax azimuthMotor;
@@ -51,87 +56,14 @@ public class Module extends SubsystemBase {
     private final PIDController drivePid;
     private final SimpleMotorFeedforward driveFf;
     private final PIDController azimuthPid;
-    // this is for a particular optimization we don't implement here (hint: see
-    // getAngle)
-    //private final Timer timer = new Timer();
     private final String name;
     private final Command defaultCommand;
 
     private SwerveModuleState goal;
     private boolean forceAngle = false;
 
-    /**
-     * @brief Creates a new module from a provided set of CAN IDs.
-     * @param driveId CAN ID of the {@link SparkFlex} (REV Neo Vortex) drive
-     * motor.
-     * @param azimuthId CAN ID of the {@link SparkMax} (REV Neo) azimuth motor.
-     * @param encoderId CAN ID of the {@link CANcoder} for azimuth absolute
-     * positioning.
-     */
-    public Module(int driveId, int azimuthId, int encoderId, String name) {
-        // this block will setup the necessary objects of our instance.
-        {
-            this.driveMotor = new SparkFlex(driveId, MotorType.kBrushless);
-            this.azimuthMotor = new SparkMax(azimuthId, MotorType.kBrushless);
-            this.azimuthEncodor = new CANcoder(encoderId);
-
-            if (Constants.IS_COMPETITION) {
-                // we're gonna ignore any errors from this :P
-                this.azimuthEncodor.optimizeBusUtilization();
-            }
-
-            this.drivePid = new PIDController(
-                    Constants.DriveTrainConstants.General.DRIVE_PID.p,
-                    Constants.DriveTrainConstants.General.DRIVE_PID.i,
-                    Constants.DriveTrainConstants.General.DRIVE_PID.d
-                    );
-
-            this.driveFf = new SimpleMotorFeedforward(
-                    Constants.DriveTrainConstants.General.DRIVE_FF.s,
-                    Constants.DriveTrainConstants.General.DRIVE_FF.v,
-                    Constants.DriveTrainConstants.General.DRIVE_FF.a
-                    );
-
-            this.azimuthPid = new PIDController(
-                    Constants.DriveTrainConstants.General.AZIMUTH_PID.p,
-                    Constants.DriveTrainConstants.General.AZIMUTH_PID.i,
-                    Constants.DriveTrainConstants.General.AZIMUTH_PID.d
-                    );
-
-            // create a default goal state
-            this.goal = new SwerveModuleState(Units.FeetPerSecond.of(0), new Rotation2d(Units.Radians.of(0)));
-
-            this.name = name;
-
-            // this ensures our pid controller is aware of the fact that we're
-            // on a circle
-            this.azimuthPid.enableContinuousInput(-180, 180);
-        }
-
-        // This block will set the inversion of the motors. if you want to do
-        // this via REV hardware client, then comment this out.
-        {
-            SparkBaseConfig driveConfig = new SparkFlexConfig()
-                .inverted(Constants.DriveTrainConstants.General.DRIVE_INVERT);
-
-            this.driveMotor.configure(driveConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
-
-            SparkBaseConfig aziConfig = new SparkMaxConfig()
-                .inverted(Constants.DriveTrainConstants.General.AZIMUTH_INVERT);
-
-            this.azimuthMotor.configure(aziConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
-        }
-
-        this.defaultCommand = this.runEnd(() -> this.enabled(), () -> {
-            this.driveMotor.setVoltage(0);
-            this.azimuthMotor.setVoltage(0);
-            this.drivePid.reset();
-            this.azimuthPid.reset();
-        }).ignoringDisable(false);
-
-        CommandScheduler.getInstance().registerSubsystem(this);
-        CommandScheduler.getInstance().setDefaultCommand(this, this.defaultCommand);
-    }
+    private SysIdRoutine driveSysId;
+    private SysIdRoutine azimuthSysId;
 
     /**
      * @brief Creates a new module from a provided set of CAN IDs and PID
@@ -204,6 +136,53 @@ public class Module extends SubsystemBase {
             this.azimuthPid.reset();
         }).ignoringDisable(false);
         CommandScheduler.getInstance().setDefaultCommand(this, this.defaultCommand);
+
+        // here we're going to set up SysID
+
+        this.driveSysId = new SysIdRoutine(
+            new SysIdRoutine.Config(
+                // 1 V/s
+                Units.Volts.of(1).div(Units.Seconds.of(1)),
+                // 8V - slightly better since swerve requires more power due to
+                // higher inertia on this mechanism than most others
+                Units.Volts.of(8),
+                // 10s timeout
+                null
+                ),
+            new SysIdRoutine.Mechanism(
+                this::setDriveVoltsWithHeading,
+                (SysIdRoutineLog l) -> {
+                    // for the drive motor, we want linear units, such as
+                    // meters, since we need to control how far and how fast the
+                    // motor is moving.
+                    l.motor(name)
+                        .voltage(this.getDriveVolts())
+                        .linearPosition(this.getDrivePosition())
+                        .linearVelocity(this.getSpeed());
+                },
+                this,
+                this.name
+                )
+            );
+
+        this.azimuthSysId = new SysIdRoutine(
+            // we're gonna use the default b/c this has less inertia; static
+            // friction is already accounted for by SysId
+            new SysIdRoutine.Config(),
+            new SysIdRoutine.Mechanism(
+                this::setAzimuthVoltsWithDrive,
+                (SysIdRoutineLog l) -> {
+                    // for the azimuth, we need angular units, so that's what we
+                    // use here.
+                    l.motor(name)
+                        .voltage(this.getAzimuthVolts())
+                        .angularPosition(this.getAngle())
+                        .angularVelocity(this.getAzimuthVelocity());
+                },
+                this,
+                this.name
+                )
+            );
     }
 
     @Override
@@ -358,6 +337,13 @@ public class Module extends SubsystemBase {
         return new SwerveModuleState(this.getSpeed(), new Rotation2d(this.getAngle()));
     }
 
+    /**
+     * Fetches the encoder distance within the drive motor's encoder. This value
+     * is relative to power on.
+     *
+     * @return Linear {@link Distance} measurement of how far the wheel has
+     * traveled.
+     */
     public Distance getDrivePosition() {
         var currentRotations = this.driveMotor.getEncoder().getPosition()
             / Constants.DriveTrainConstants.General.DRIVE_GEARING;
@@ -366,6 +352,13 @@ public class Module extends SubsystemBase {
             .times(currentRotations);
     }
 
+    /**
+     * Fetches the current position of the swerve module as a
+     * {@link SwerveModulePosition}.
+     *
+     * @return The current position of the drive motor and the heading of the
+     * azimuth.
+     */
     public SwerveModulePosition getPosition() {
         return new SwerveModulePosition(this.getDrivePosition(), new Rotation2d(this.getAngle()));
     }
@@ -389,5 +382,130 @@ public class Module extends SubsystemBase {
     protected void setDriveVolts(double volts) {
         this.driveMotor.setVoltage(volts);
     }
+
+    /**
+     * Fetches the voltage currently being applied to the motor. Used mostly
+     * just for SysID.
+     *
+     * @return A {@link Voltage} nominally -12 to 12 Volts.
+     */
+    public Voltage getDriveVolts() {
+        // motor.get is all we have access to, but we know it's a percentage of
+        // voltage in either + or - direction, so we can just times 12.0 to get
+        // the volts and then use units to convert type
+        return Units.Volts.of(this.driveMotor.get() * 12.0);
+    }
+
+    /**
+     * Fetches the voltage currently being applied to the motor. Used mostly
+     * just for SysID.
+     *
+     * @return A {@link Voltage} nominally -12 to 12 Volts.
+     */
+    public Voltage getAzimuthVolts() {
+        // motor.get is all we have access to, but we know it's a percentage of
+        // voltage in either + or - direction, so we can just times 12.0 to get
+        // the volts and then use units to convert type
+        return Units.Volts.of(this.azimuthMotor.get() * 12.0);
+    }
+
+    /**
+     * Set the azimuth motor to a given voltage.
+     *
+     * @param volts Voltage to apply to the azimuth.
+     */
+    protected void setAzimuthVolts(Voltage volts) {
+        this.azimuthMotor.setVoltage(volts);
+    }
+
+    /**
+     * Fetch the angular velocity of the azimuth of this module. Used mostly
+     * just for SysID.
+     *
+     * @return {@link AngularVelocity} from the encoder representing how quickly
+     * the azimuth is rotating.
+     */
+    public AngularVelocity getAzimuthVelocity() {
+        return this.azimuthEncodor.getVelocity().getValue();
+    }
+
+    // BEGIN SYSID SECTION //
+
+    /**
+     * Drive the wheel with a given voltage, while keeping the azimuth heading
+     * stable.
+     *
+     * @param volts The voltage to apply to the drive motor.
+     */
+    protected void setDriveVoltsWithHeading(Voltage volts) {
+        // our azimuth should be locked at 0 degrees.
+        var aziVolts = this.azimuthPid.calculate(
+                this.getAngle().abs(Units.Degrees),
+                0
+                );
+
+        this.azimuthMotor.setVoltage(aziVolts);
+        this.driveMotor.setVoltage(volts);
+    }
+
+    /**
+     * Sets the voltage of the azimuth motor to a given voltage, and the drive
+     * motor to 0V.
+     *
+     * @param volts The voltage (nominally -12 to 12 Volts) to set the azimuth
+     * to.
+     */
+    protected void setAzimuthVoltsWithDrive(Voltage volts) {
+        this.setDriveVolts(0);
+        this.setAzimuthVolts(volts);
+    }
+
+    /**
+     * Gets the command for running the quasistatic SysID routine for drive.
+     * This will lock the azimuth to a set goal heading (0 degrees) and then run
+     * SysID on the drive motor.
+     *
+     * @param dir The direction in which to run the test
+     * @return Corresponding {@link Command} that depends on this {@link Module}
+     */
+    public Command driveSysIdQuasistatic(SysIdRoutine.Direction dir) {
+        return this.driveSysId.quasistatic(dir);
+    }
+
+    /**
+     * Gets the command for running the dynamic SysID routine for drive. This
+     * will lock the azimuth to a set goal heading (0 degrees) and then run
+     * SysID on the drive motor.
+     *
+     * @param dir The direction in which to run the test
+     * @return Corresponding {@link Command} that depends on this {@link Module}
+     */
+    public Command driveSysIdDynamic(SysIdRoutine.Direction dir) {
+        return this.driveSysId.dynamic(dir);
+    }
+
+    /**
+     * Gets the command for running the quasistatic SysID routine for azimuth.
+     * This will lock the drive motor to 0V and run SysID on the azimuth motor.
+     *
+     * @param dir The direction in which to run the test.
+     * @return Corresponding {@link Command} that depends on this {@link Module}
+     */
+    public Command azimuthSysIdQuasistatic(SysIdRoutine.Direction dir) {
+        return this.azimuthSysId.quasistatic(dir);
+    }
+
+    /**
+     * Gets the command for running the dynamic SysID routine for azimuth. This
+     * will lock the drive motor to 0V and run SysID on the azimuth motor.
+     *
+     * @param dir The direction in which to run the test.
+     * @return Corresponding {@link Command} that depends on this {@link Module}
+     */
+    public Command azimuthSysIdDynamic(SysIdRoutine.Direction dir) {
+        return this.azimuthSysId.dynamic(dir);
+    }
+
+    // END SYSID SECTION //
 }
 
