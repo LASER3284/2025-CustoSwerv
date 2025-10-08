@@ -4,7 +4,6 @@ package org.laser3284.subsystems.swerve;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -14,7 +13,6 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.units.*;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 
@@ -34,7 +32,7 @@ import com.ctre.phoenix6.hardware.Pigeon2;
  * @warning This drivetrain does not implement any functionality for Autonomous
  * control. That can be done via rewrite or via subclassing.
  * @implNote we're using a continuous interval for rotation of [-180,180]; this
- * is done by 
+ * is done by
  */
 public class Drive extends SubsystemBase {
     public final String NAME = "drivetrain";
